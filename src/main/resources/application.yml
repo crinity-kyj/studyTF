@@ -1,0 +1,48 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:mariadb://localhost:3306/chatdb?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: root
+    password: 1234
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true # ????? ?????
+    properties:
+      hibernate:
+        format_sql: true # SQL ???
+        highlight_sql: true # ANSI ??? ?? ????
+        use_sql_comments: true # SQL ??? /* */ ?? ??
+        dialect: org.hibernate.dialect.MariaDBDialect
+
+  data:
+    web:
+      pageable:
+        default-page-size: 20
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+#logging:
+#  level:
+#    org.hibernate.SQL: debug # logger? ?????
+#    org.hibernate.type: trace # ???? ? ??
+#
+# WebSocket ??? ??? ?? (??? ? ??)
+# logging:
+#   level:
+#     org.springframework.web.socket: debug
+#     org.springframework.messaging: debug
+
+# Security ?? ??? (????)
+# spring:
+#   security:
+#     user:
+#       name: user
+#       password: pass
