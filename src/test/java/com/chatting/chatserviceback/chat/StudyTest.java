@@ -1,6 +1,7 @@
 package com.chatting.chatserviceback.chat;
 
 import com.chatting.chatserviceback.chat.domain.ChatMessage;
+import com.chatting.chatserviceback.chat.domain.QChatMessage;
 import com.chatting.chatserviceback.chat.repository.ChatMessageRepositoryImpl;
 import com.chatting.chatserviceback.member.domain.Member;
 import com.chatting.chatserviceback.member.domain.QMember;
@@ -40,15 +41,15 @@ class StudyTest {
 
     @BeforeEach
     void setUp() {
-        Member member = Member.create("member1", "member@gmail.com");
+        Member member = Member.create("member1", "member@gmail.com","testpassword");
         sender = memberRepositoryImpl.save(member);
-        Member member2 = Member.create("member2", "member2@gmail.com");
+        Member member2 = Member.create("member2", "member2@gmail.com", "testpassword2");
         receiver = memberRepositoryImpl.save(member2);
 
         List<Member> saveList = new ArrayList<>();
 
         for(int i = 0 ; i < 10 ; i++) {
-            Member memberSave = Member.create("memberTest" + i, "memberTest"+ i +"@gmail.com");
+            Member memberSave = Member.create("memberTest" + i, "memberTest"+ i +"@gmail.com", "testpassword" + i);
             saveList.add(memberSave);
         }
         memberRepositoryImpl.saveAll(saveList);
@@ -202,10 +203,6 @@ class StudyTest {
         Member findMemberQueryDsl = queryFactory
             .selectFrom(member).where(member.id.eq(receiver.getId()))
             .fetchOne();
-        Member test = queryFactory
-            .selectFrom(member).where(member.id.eq(receiver.getId()))
-            .fetchOne();
-
 
         //then
         System.out.println(findMemberQueryDsl.getUsername());
@@ -240,8 +237,92 @@ class StudyTest {
 
     }
 
+    @Test
+    @DisplayName("쿼리 DSL 기본 문법")
+    void queryDslBasic1(){
+        //given
+        QMember member = QMember.member;
+        //when
+        Member findMemberQueryDsl = queryFactory
+            .selectFrom(member)
+            .where(member.id.eq(receiver.getId()).and(member.username.eq("member1")))
+            .fetchOne();
+
+        Member test = queryFactory
+            .selectFrom(member)
+            .where(member.id.eq(receiver.getId()),
+                (member.username.eq("member1")))
+            .fetchOne();
+
+    }
+
+    @Test
+    @DisplayName("쿼리 DSL 조인")
+    void joinQueryDsl(){
+        //given
+        QChatMessage chatMessage = QChatMessage.chatMessage;
+        QMember member = QMember.member;
+        //when
+        List<ChatMessage> fetch = queryFactory.selectFrom(chatMessage)
+            .join(chatMessage.sender, member)
+            .where(chatMessage.sender.id.eq(sender.getId()))
+            .fetch();
+        //then
+        Assertions.assertThat(fetch).hasSize(10);
+
+        List<ChatMessage> fetchLeft = queryFactory.selectFrom(chatMessage)
+            .leftJoin(chatMessage.sender, member)
+            .where(chatMessage.sender.username.eq(sender.getUsername()))
+            .fetch();
+
+        List<ChatMessage> fetch1 = queryFactory
+            .selectFrom(chatMessage)
+            .join(chatMessage.sender, member)
+            .on(chatMessage.sender.username.eq(sender.getUsername()))
+            .fetch();
+
+        for (ChatMessage message : fetch1) {
+            System.out.println("message.getSender().getEmail() = " + message.getSender().getEmail());
+        }
+
+    }
+
+    @Test
+    @DisplayName("일반 조인")
+    void queryDslJoin(){
+        //given
+        QChatMessage chatMessage = QChatMessage.chatMessage;
+        QMember member = QMember.member;
+        //when
+        ChatMessage join = queryFactory
+            .selectFrom(chatMessage)
+            .join(chatMessage.receiver, member)
+            .on(chatMessage.receiver.username.eq(receiver.getUsername()))
+            .fetchFirst();
+        //then
+        System.out.println(" ============================ ");
+        System.out.println(join.getReceiver().getUsername());
+        System.out.println(" ============================ ");
+    }
+
+    @Test
+    @DisplayName("쿼리 DSL 조인")
+    void joinFetchQueryDsl(){
+        //given
+        QChatMessage chatMessage = QChatMessage.chatMessage;
+        QMember member = QMember.member;
+        //when
+        ChatMessage fetch = queryFactory.selectFrom(chatMessage)
+            .join(chatMessage.receiver, member).fetchJoin()
+            .fetchFirst();
 
 
+        System.out.println(" ============================ ");
+        System.out.println(fetch.getReceiver().getUsername());
+        System.out.println(" ============================ ");
+    }
+    
+    
     @Test
     @DisplayName("채팅 queryDsl 로 조회")
     void searchChatMessage() {

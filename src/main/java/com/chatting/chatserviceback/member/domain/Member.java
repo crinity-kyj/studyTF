@@ -49,9 +49,10 @@ public class Member {
         this.sendChatMessageList = sendChatMessageList;
     }
 
-    public static Member create(String username, String password) {
+    public static Member create(String username, String  email, String password) {
         return Member.builder()
             .username(username)
+            .email(email)
             .password(password)
             .build();
     }
