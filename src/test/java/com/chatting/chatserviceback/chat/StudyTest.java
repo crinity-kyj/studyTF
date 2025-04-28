@@ -3,7 +3,10 @@ package com.chatting.chatserviceback.chat;
 import com.chatting.chatserviceback.chat.domain.ChatMessage;
 import com.chatting.chatserviceback.chat.repository.ChatMessageRepositoryImpl;
 import com.chatting.chatserviceback.member.domain.Member;
+import com.chatting.chatserviceback.member.domain.QMember;
 import com.chatting.chatserviceback.member.repository.MemberRepositoryImpl;
+import com.querydsl.core.QueryResults;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,6 +31,9 @@ class StudyTest {
 
     @Autowired
     private EntityManager em;
+
+    @Autowired
+    private JPAQueryFactory queryFactory;
 
     private Member sender;
     private Member receiver;
@@ -155,6 +161,83 @@ class StudyTest {
 
         // then
         // (여기서는 쿼리 로그를 눈으로 확인)
+    }
+
+
+    @Test
+    @DisplayName("쿼리 DSL 조회")
+    void queryDslSelect(){
+        //given
+        QMember member = QMember.member;
+        //when
+        Member findMemberQueryDsl = queryFactory
+            .selectFrom(member).where(member.id.eq(receiver.getId()))
+            .fetchOne();
+
+        //then
+        System.out.println(findMemberQueryDsl.getUsername());
+    }
+
+    @Test
+    @DisplayName("JPQL 조회")
+    void JPQLSelect(){
+        //given
+        String qlString =
+            "select m from Member m " +
+                "where m.id = :id";
+        //when
+        Member findMember = em.createQuery(qlString, Member.class)
+            .setParameter("id", receiver.getId()).getSingleResult();
+        //then
+        System.out.println(findMember.getUsername());
+    }
+
+
+    @Test
+    @DisplayName("쿼리 DSL 기본 문법")
+    void queryDslBasic(){
+        //given
+        QMember member = QMember.member;
+        //when
+        Member findMemberQueryDsl = queryFactory
+            .selectFrom(member).where(member.id.eq(receiver.getId()))
+            .fetchOne();
+        Member test = queryFactory
+            .selectFrom(member).where(member.id.eq(receiver.getId()))
+            .fetchOne();
+
+
+        //then
+        System.out.println(findMemberQueryDsl.getUsername());
+        member.username.eq("member1") ;// username = 'member1'
+        member.username.ne("member1") ;//username != 'member1'
+        member.username.eq("member1").not() ;// username != 'member1'
+        member.username.isNotNull() ;//이름이 is not null
+        member.id.in(10, 20) ;// id in (10,20)
+        member.id.notIn(10, 20) ;// id not in (10, 20)
+        member.id.between(10,30) ;//between 10, 30
+        member.id.goe(30); // id >= 30
+        member.id.gt(30); // id > 30
+        member.id.loe(30); // id <= 30
+        member.id.lt(30);// id < 30
+        member.username.like("member%");//like 검색
+        member.username.contains("member"); // like ‘%member%’ 검색
+        member.username.startsWith("member"); //like ‘member%’ 검색
+
+        //List
+        List<Member> fetch = queryFactory
+            .selectFrom(member)
+            .fetch();
+        //단 건
+        Member findMember1 = queryFactory
+            .selectFrom(member)
+            .fetchOne();
+        //처음 한 건 조회
+        Member findMember2 = queryFactory
+            .selectFrom(member)
+            .fetchFirst();
+
+
     }
 
 
